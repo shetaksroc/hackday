@@ -23,15 +23,3 @@ def split_line(text):
     for word in words:
         # print the word
         print(word)
-
-
-text = "Surya ART1000-4060 62340' x 2340' 8989ss Abstract"
-print text
-print "Sizes : ",getSizes(text)
-
-
-
-text = "Surya ART1000-4060 6234s0' x 2340'    8989ss Abstract"
-print text
-print "Sizes : ",getSizes(text)
-print "Words : ",split_line(text)
