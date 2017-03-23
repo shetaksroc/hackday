@@ -11,6 +11,7 @@ for row in data_list:
 	for column in row:
 		column_value=str(row[column])
 		replaced = re.sub('\(.*\)', '', column_value)
+		replaced = re.sub('\\\\', '', replaced)
 		row_list.append(replaced)
 	final_list.append(row_list)	
 #print final_list
