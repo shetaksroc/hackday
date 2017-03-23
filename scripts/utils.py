@@ -11,8 +11,7 @@ def getSizes(text):
 	size=""
 	if result:
 	    size = result.group(0)
-	else:
-		print "No size found"
+	
 	return size
 
 def split_line(text):
