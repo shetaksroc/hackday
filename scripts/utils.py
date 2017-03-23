@@ -8,7 +8,7 @@ def print_nos(text):
 	print 'Numbers : ',numbers
 
 def getSizes(text):
-	pattern = '\s\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?(\s)*[x|X](\s)*\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?'
+	pattern = '(\s|^)\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?(\s)*[x|X](\s)*\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?'
 	compiled = re.compile(pattern)
 	result = compiled.search(text)
 	size=""
@@ -33,3 +33,34 @@ def getColor(text):
 		if redefinedColor in text.lower():
 			colorSet.append(color)
 	return colorSet
+
+def getProductType(original_title,original_size,brand):
+	#print original_title,brand
+	#brand=row_list[2].lower()
+	#title=title.replace(brand,"")
+	#print "Params are size: ",original_size,"\tbrand : ",brand,"\tTitle : ",original_title,""
+	pack=getPackQuantity(original_title).lower()
+	colors=getColor(original_title)
+	original_title=original_title.lower()
+	original_title=original_title.replace(original_size,"")
+	original_title=original_title.replace(pack,"")
+	original_title=original_title.replace(brand,"")
+	for color in colors:
+		original_title=original_title.replace(color.lower(),"")
+	#original_title=original_title.replace("\(.*\)", "")
+	original_title=re.sub('\(.*\)', '', original_title)
+
+	#print original_title
+	return original_title
+	
+def getPackQuantity(text):
+	#print text
+	pattern = '(\d+\/Pack)'
+	compiled = re.compile(pattern)
+	result = compiled.search(text)
+	quantity=""
+	if result:
+	   quantity = result.group(0)
+	return quantity
+		
+	
