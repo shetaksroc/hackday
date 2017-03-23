@@ -5,7 +5,7 @@ def print_nos(text):
 	print 'Numbers : ',numbers
 
 def getSizes(text):
-	pattern = '\s\d+(\.\d*)?(\"|\')?(\s)*(\d+)?(\"|\')?(\s)*[x|X](\s)*\d+(\.\d*)?(\"|\')?(\s)*(\d+)?(\"|\')?(\s)'
+	pattern = '\s\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?(\s)*[x|X](\s)*\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?'
 	compiled = re.compile(pattern)
 	result = compiled.search(text)
 	size=""
