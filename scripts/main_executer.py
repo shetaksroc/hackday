@@ -2,7 +2,7 @@ import numpy as np
 import csv
 import json,sys
 import re
-
+import utils
 def loadDataFromJson():
 	txt = open(sys.argv[1]);
 	data_in_string_format=txt.read()
@@ -10,11 +10,21 @@ def loadDataFromJson():
 	final_list=[]
 	for row in data_list:
 		row_list=[]
+		attributes={}
 		for column in row:
 			column_value=str(row[column])
 			replaced = re.sub('\(.*\)', '', column_value)
 			replaced = re.sub('\\\\', '', replaced)
-			row_list.append(replaced)
+			replaced = replaced.replace(",","")
+			row_list.append(replaced.lower())
+		
+		attributes['cluster_id']="dummy_cluster"
+		attributes['size']=utils.getSizes(row_list[1])
+		attributes['color']=""
+		attributes['type']=""
+		attributes['sub_brand']=""	
+		attributes['material']=""
+		row_list.append(attributes)	
 		final_list.append(row_list)
 	return final_list		
 #print final_list
@@ -48,14 +58,24 @@ def createDistinctAttributes(final_list):
 #print len(final_list) 
 def getDistinctLists(data):
 	final_map=dict()
+
+	counter=1
 	for each_row in data:
 		key=str(each_row[2]+"^"+each_row[4]+"^"+each_row[5]+"^"+each_row[6])
 		if(key in final_map):
 			existing_row=final_map.get(key)
+			each_row[-1]['cluster_id']="cluster_"+key_map[key]
 			existing_row.append(each_row)
 			final_map[key]=existing_row
 		else:
-			final_map[key]=each_row
+			new_list=[]
+			key_map[key] = str(counter)
+			each_row[-1]['cluster_id']="cluster_"+key_map[key]
+			counter+=1
+			new_list.append(each_row)
+			final_map[key]=new_list
+			existing_row=final_map.get(key)
+			
 	return final_map
 
 #getDistinctLists(final_list)		
@@ -63,8 +83,12 @@ def getDistinctLists(data):
 if __name__== "__main__":
 	datalist=loadDataFromJson()
 	distinct_attributes=createDistinctAttributes(datalist)
+	key_map = dict()
 	clustered_lists=getDistinctLists(datalist)
-	print clustered_lists
+	
+	for key, value in clustered_lists.iteritems():
+		print "cluster",key_map[key],"\tCount: ",len(value),"\t",key
+
 
 
 
