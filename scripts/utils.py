@@ -7,7 +7,20 @@ def print_nos(text):
 	numbers = re.findall(r' \d+"', text)
 	print 'Numbers : ',numbers
 
+def getDimensionSizes(text):
+	pattern = '\d+\s\d+\/\d+\&quotH\s*(x|X)\s*\d+\s\d+\/\d+\&quotW\s*(x|X)\s*(\s|^)\d+\s\d+\/\d+\&quotD'
+	compiled = re.compile(pattern)
+	result = compiled.search(text)
+	size=""
+	if result:
+	    size = result.group(0)
+	
+	return size
+
 def getSizes(text):
+	dimension=getDimensionSizes(text)
+	if("" != dimension):
+		return dimension
 	pattern = '(\s|^)\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?(\s)*[x|X](\s)*\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?'
 	compiled = re.compile(pattern)
 	result = compiled.search(text)
