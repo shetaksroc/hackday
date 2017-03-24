@@ -112,13 +112,19 @@ def getSizeOccurences(clustered_lists):
 
 
 def clustering(clustered_lists):
+	clusterMap = {}
 	for key, value in clustered_lists.iteritems():
 		score_list=[]
 		first_sku_index = 0
 		updatedValues = value
+		
+		
 		while (first_sku_index < len(updatedValues)):#len(updatedValues)):
+			addedskus=[]
 			sec_sku_index = first_sku_index + 1
+
 			first_sku = updatedValues[first_sku_index]
+			addedskus.append(first_sku[0])
 			while (sec_sku_index < len(updatedValues)):#len(updatedValues)):
 				sec_sku = updatedValues[sec_sku_index]
 
@@ -127,32 +133,100 @@ def clustering(clustered_lists):
 				token_set_ratio=fuzz.token_set_ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
 
 				if(ratio>90 and partial_ratio>90 and token_set_ratio>90):
-					score_list.append([first_sku,sec_sku,first_sku[-1]["cluster_id"]])
+					#score_list.append([first_sku,sec_sku,first_sku[-1]["cluster_id"]])
+					addedskus.append(sec_sku[0])
 					#print [first_sku,sec_sku,first_sku[-1]["cluster_id"]],"\n\n"
 					try:
 						#updatedValues.remove(first_sku)
-						updatedValues.remove(sec_sku)
+						value.remove(sec_sku)
 					except ValueError:
 						pass	
 				sec_sku_index+=1
+			key = first_sku[2]+"_"+first_sku[-1]['size'] # brand_cluster_1
+			if(key in clusterMap):
+				existing_row=clusterMap.get(key)
+				existing_row.append(addedskus)
+				clusterMap[key]=existing_row
+				#print keyVal,' Already added first_sku is ',first_sku[0]
+			else:
+				clusterMap[key]=addedskus	
+			
 			try:
-				updatedValues.remove(first_sku)
+				value.remove(first_sku)
 			except ValueError:
 				pass	
+			
 			first_sku_index+=1			
-	return score_list 			
+	#return score_list 			
+	return clusterMap
 
 def trimedSize(size):
 	size=size.replace("\"","").strip()
 	size=size.replace("\'","").strip()
 	return size
 
-def compareSize(size1, size2):
+def getSortedSize(size):
+	nos = size.lower().split('x')
+	newNos = []
+	for i in nos:
+		newNos.append(i.strip())
+	return sorted(newNos)
+
+def compareSize(size1, size2, sort):
 	size1=trimedSize(size1)
 	size2=trimedSize(size2)
 
-	return size1==size2
+	if(sort):
+		size1=getSortedSize(size1)
+		size2=getSortedSize(size2)
+		if(cmp(size1, size2)==0):
+			return True
+		else:
+			return False
 
+	return size1 == size2
+
+def cluster_efficient(clustered_lists):
+	clusteredSkusMap = {}
+	for cluserId, skusList in clustered_lists.iteritems():
+		alreadyAddedSkus = []
+		clusteredSkus = []
+		#print skusList
+		i = 0
+		while(i < len(skusList)):
+			first_sku = skusList[i]
+			if(i not in alreadyAddedSkus):
+				alreadyAddedSkus.append(i)
+				clusteredSkus.append(skusList[i])
+				skusList.remove(skusList[i])
+				j = i + 1
+				while( j < len(skusList)):
+					if(j not in alreadyAddedSkus):
+						#print skusList
+						first_sku_size=skusList[i][-1]['size']
+						sec_sku_size=skusList[j][-1]['size']
+						## Here we need to say the deciding logic
+						## we shall make more generic
+						if(compareSize(first_sku_size, sec_sku_size) == 0):
+							alreadyAddedSkus.append(j)
+							clusteredSkus.append(skusList[j])
+							skusList.remove(skusList[j])
+					j+=1
+			#removed the cluster_id
+			key = first_sku[2]+"_"+cluserId # brand_cluster_1
+			if(key in clusteredSkusMap):
+				existing_row=clusteredSkusMap.get(key)
+				existing_row.append(clusteredSkus)
+				clusteredSkusMap[key]=existing_row
+				#print keyVal,' Already added first_sku is ',first_sku[0]
+			else:
+				new_list=[]
+				new_list.append(clusteredSkus)
+				clusteredSkusMap[key]=new_list
+				#print keyVal,' Added first_sku is ',first_sku[0]
+			i+=1
+
+	return clusteredSkusMap
 def clustering_old(clustered_lists):
 	cluster_map={}
 	size_map={}
@@ -177,12 +251,12 @@ def clustering_old(clustered_lists):
 				existing_row=size_map.get(size)
 				existing_row.append(first_sku)
 				size_map[size]=existing_row
-				print keyVal,' Already added first_sku is ',first_sku[0]
+				#print keyVal,' Already added first_sku is ',first_sku[0]
 			else:
 				new_list=[]
 				new_list.append(first_sku)
 				size_map[size]=new_list
-				print keyVal,' Added first_sku is ',first_sku[0]
+				#print keyVal,' Added first_sku is ',first_sku[0]
 			
 			while (sec_sku_index < len(updatedValues)):#len(updatedValues)):
 				sec_sku = updatedValues[sec_sku_index]
@@ -190,7 +264,7 @@ def clustering_old(clustered_lists):
 				sec_sku_size = sec_sku[-1]['size']
 				
 				if(compareSize(first_sku_size, sec_sku_size) == 0):
-					print keyVal,"\t\t_ matched ",trimedSize(first_sku_size)," Vs ",trimedSize(sec_sku_size),first_sku[0],' == ',sec_sku[0]
+					#print keyVal,"\t\t_ matched ",trimedSize(first_sku_size)," Vs ",trimedSize(sec_sku_size),first_sku[0],' == ',sec_sku[0]
 					try:
 						#updatedValues.remove(first_sku)
 						existing_row=size_map.get(size)
@@ -201,7 +275,7 @@ def clustering_old(clustered_lists):
 						pass	
 					#cluster_map[first_sku[-1]['cluster_id']]=sec_sku
 				else:
-					print keyVal," with NO Match in size \t\t_",trimedSize(first_sku_size)," Vs ",trimedSize(sec_sku_size),first_sku[0],' == ',sec_sku[0]
+					#print keyVal," with NO Match in size \t\t_",trimedSize(first_sku_size)," Vs ",trimedSize(sec_sku_size),first_sku[0],' == ',sec_sku[0]
 					if(size in size_map):
 						existing_row=size_map.get(size)
 						existing_row.append(sec_sku)
@@ -224,6 +298,102 @@ def clustering_old(clustered_lists):
 			first_sku_index+=1			
 	return size_map 			
 
+def addToClusterMap(clusterMap, first_sku):
+	key = first_sku[2]+"_"+first_sku[-1]['size'] # brand_cluster_1
+	if(key in clusterMap):
+		existing_skus=clusterMap.get(key)
+		existing_skus.append(first_sku)
+		clusterMap[key]=existing_skus
+		#print keyVal,' Already added first_sku is ',first_sku[0]
+	else:
+		skusList=[]
+		skusList.append(first_sku)
+		clusterMap[key]=skusList
+	return clusterMap	
+	
+
+def clustering_modified_final(clustered_lists):
+	clusterMap = {}
+	brandChecks = ['trademark fine art','national marker']
+	NM = 'national marker'
+	for key, value in clustered_lists.iteritems():
+		score_list=[]
+		
+		for first_sku in value:
+			addedskus=[]
+			unclusterskus=[]
+			addedskus.append(first_sku[0])
+			for sec_sku in list(value):
+				if(first_sku[0] != sec_sku[0]):
+					ratio=fuzz.ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
+					partial_ratio=fuzz.partial_ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
+					token_set_ratio=fuzz.token_set_ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
+					#if( first_sku[2] in brandChecks):
+					#if(ratio>90 and partial_ratio>90 and token_set_ratio>90):
+						#score_list.append([first_sku,sec_sku,first_sku[-1]["cluster_id"]])
+					sort = False
+					if(NM in first_sku[2].lower()):
+						sort = True
+					if(compareSize(first_sku[-1]['size'], sec_sku[-1]['size'], sort)):
+						addedskus.append(sec_sku[0])
+						#price_match=checkPriceLogic(float(first_sku[3]),float(sec_sku[3]))
+						#if(price_match is True):
+						#	addedskus.append(sec_sku[0])
+						#	try:
+								#updatedValues.remove(first_sku)
+						#		value.remove(sec_sku)
+						#	except ValueError:
+						#		pass
+						#else:		
+							#unclusterskus.append(sec_sku[0])
+						try:
+							#updatedValues.remove(first_sku)
+							value.remove(sec_sku)
+						except ValueError:
+							pass
+					#print [first_sku,sec_sku,first_sku[-1]["cluster_id"]],"\n\n"
+					
+						
+							
+			
+#			unclustered_key = "unclustered" # brand_cluster_1
+#			
+#			if(unclustered_key in clusterMap):
+#				existing_row=clusterMap.get(unclustered_key)
+#				existing_row.append(unclusterskus)
+#				clusterMap[unclustered_key]=existing_row
+#				#print keyVal,' Already added first_sku is ',first_sku[0]
+#			else:
+#				clusterMap[unclustered_key]=unclusterskus		
+#
+			key = first_sku[2]+"_"+first_sku[-1]['size'] # brand_cluster_1
+			
+			if(key in clusterMap):
+				existing_row=clusterMap.get(key)
+				existing_row.extend(addedskus)
+				clusterMap[key]=existing_row
+				#print keyVal,' Already added first_sku is ',first_sku[0]
+			else:
+				
+				clusterMap[key]=addedskus	
+			
+			try:
+				value.remove(first_sku)
+			except ValueError:
+				pass				 			
+	return clusterMap
+
+def checkPriceLogic(price1,price2):
+	if(price1 is None or price2 is  None):
+		return False
+	elif price1>price2:
+		return price1<(1.5* price2)
+	elif(price1>price2):
+		return price2<(1.5* price1)
+	elif(price1==price2):
+		return True
+	else:
+		return False				
 
 
 if __name__== "__main__":
@@ -231,10 +401,24 @@ if __name__== "__main__":
 	#print datalist
 	distinct_attributes=createDistinctAttributes(datalist)
 	key_map = dict()
+	#this is a dictionary
 	clustered_lists=getDistinctLists(datalist)
 	size_occurences=getSizeOccurences(clustered_lists)
-	#clustered = clustering(clustered_lists)
-	clustered = clustering_old(clustered_lists)
+	clustered = clustering_modified_final(clustered_lists)
+
+	for key, value in clustered.iteritems():
+
+		print len(value),"\t\t",key
+		if(('national marker_') in key):
+			print "NM : ",value
+		#if(len(value) < 20):
+		#	print value
+	
+	#print clustered_lists
+	#clustered = cluster_efficient(clustered_lists)
+	#print clustered
+	#for key, value in clustered.iteritems():
+	#	print len(value),"\t\t",key
 	#print clustered
 
 	#	resultMap = {}
