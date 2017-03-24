@@ -166,33 +166,42 @@ def clustering_old(clustered_lists):
 			sec_sku_index = first_sku_index + 1
 			first_sku = updatedValues[first_sku_index]
 			size = str(first_sku[2]+"_"+trimedSize(first_sku[-1]['size']))
-			key=str(first_sku[-1]['cluster_id'])
-			key=str(first_sku[2]+"_"+first_sku[-1]['cluster_id'])
-			
+
+			#key=str(first_sku[-1]['cluster_id'])
+			keyVal=str(first_sku[2]+"_"+first_sku[-1]['cluster_id'])
+			first_sku_size = first_sku[-1]['size']
+			#print keyVal,"\t\t_",trimedSize(first_sku_size),"_",first_sku[0]
+			#print 'first_sku is added : ',key,'\t\t : ',first_sku[0]
+
 			if(size in size_map):
 				existing_row=size_map.get(size)
 				existing_row.append(first_sku)
 				size_map[size]=existing_row
+				print keyVal,' Already added first_sku is ',first_sku[0]
 			else:
 				new_list=[]
 				new_list.append(first_sku)
 				size_map[size]=new_list
+				print keyVal,' Added first_sku is ',first_sku[0]
 			
 			while (sec_sku_index < len(updatedValues)):#len(updatedValues)):
 				sec_sku = updatedValues[sec_sku_index]
-				first_sku_size = first_sku[-1]['size']
+				
 				sec_sku_size = sec_sku[-1]['size']
+				
 				if(compareSize(first_sku_size, sec_sku_size) == 0):
+					print keyVal,"\t\t_ matched ",trimedSize(first_sku_size)," Vs ",trimedSize(sec_sku_size),first_sku[0],' == ',sec_sku[0]
 					try:
 						#updatedValues.remove(first_sku)
 						existing_row=size_map.get(size)
 						existing_row.append(sec_sku)
 						size_map[size]=existing_row
-						updatedValues.remove(sec_sku)
+						#updatedValues.remove(sec_sku)
 					except ValueError:
 						pass	
 					#cluster_map[first_sku[-1]['cluster_id']]=sec_sku
 				else:
+					print keyVal," with NO Match in size \t\t_",trimedSize(first_sku_size)," Vs ",trimedSize(sec_sku_size),first_sku[0],' == ',sec_sku[0]
 					if(size in size_map):
 						existing_row=size_map.get(size)
 						existing_row.append(sec_sku)
@@ -201,6 +210,12 @@ def clustering_old(clustered_lists):
 						new_list=[]
 						new_list.append(sec_sku)
 						size_map[size]=new_list
+				#print 'Second Sku is added : ',key,'\t\t : ',first_sku[0]
+
+				try:
+					updatedValues.remove(sec_sku)
+				except ValueError:
+					pass	
 				sec_sku_index+=1
 			try:
 				updatedValues.remove(first_sku)
@@ -211,13 +226,6 @@ def clustering_old(clustered_lists):
 
 
 
-
-
-
-
-
-
-
 if __name__== "__main__":
 	datalist=loadDataFromJson()
 	#print datalist
@@ -225,7 +233,9 @@ if __name__== "__main__":
 	key_map = dict()
 	clustered_lists=getDistinctLists(datalist)
 	size_occurences=getSizeOccurences(clustered_lists)
-	clustered = clustering(clustered_lists)
+	#clustered = clustering(clustered_lists)
+	clustered = clustering_old(clustered_lists)
+	#print clustered
 
 	#	resultMap = {}
 #	for skus in clustered:
@@ -249,8 +259,8 @@ if __name__== "__main__":
  
 
 
-
-	print clustering(clustered_lists)
+	
+	#print clustering(clustered_lists)
 
 	#clustered = clustering(clustered_lists)
 	#for key, value in clustered.iteritems():
