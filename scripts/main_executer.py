@@ -3,6 +3,9 @@ import csv
 import json,sys
 import re
 import utils
+import numpy as np
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 def loadDataFromJson():
 	txt = open(sys.argv[1]);
 	data_in_string_format=txt.read()
@@ -108,6 +111,107 @@ def getSizeOccurences(clustered_lists):
 	return size_count			
 
 
+def clustering(clustered_lists):
+	for key, value in clustered_lists.iteritems():
+		score_list=[]
+		first_sku_index = 0
+		updatedValues = value
+		while (first_sku_index < len(updatedValues)):#len(updatedValues)):
+			sec_sku_index = first_sku_index + 1
+			first_sku = updatedValues[first_sku_index]
+			while (sec_sku_index < len(updatedValues)):#len(updatedValues)):
+				sec_sku = updatedValues[sec_sku_index]
+
+				ratio=fuzz.ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
+				partial_ratio=fuzz.partial_ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
+				token_set_ratio=fuzz.token_set_ratio(first_sku[-1]['size'], sec_sku[-1]['size'])
+
+				if(ratio>90 and partial_ratio>90 and token_set_ratio>90):
+					score_list.append([first_sku,sec_sku,first_sku[-1]["cluster_id"]])
+					#print [first_sku,sec_sku,first_sku[-1]["cluster_id"]],"\n\n"
+					try:
+						#updatedValues.remove(first_sku)
+						updatedValues.remove(sec_sku)
+					except ValueError:
+						pass	
+				sec_sku_index+=1
+			try:
+				updatedValues.remove(first_sku)
+			except ValueError:
+				pass	
+			first_sku_index+=1			
+	return score_list 			
+
+def trimedSize(size):
+	size=size.replace("\"","").strip()
+	size=size.replace("\'","").strip()
+	return size
+
+def compareSize(size1, size2):
+	size1=trimedSize(size1)
+	size2=trimedSize(size2)
+
+	return size1==size2
+
+def clustering_old(clustered_lists):
+	cluster_map={}
+	size_map={}
+	for key, value in clustered_lists.iteritems():
+		score_list=[]
+		
+		first_sku_index = 0
+
+		updatedValues = value
+		while (first_sku_index < len(updatedValues)):#len(updatedValues)):
+			sec_sku_index = first_sku_index + 1
+			first_sku = updatedValues[first_sku_index]
+			size = str(first_sku[2]+"_"+trimedSize(first_sku[-1]['size']))
+			key=str(first_sku[-1]['cluster_id'])
+			key=str(first_sku[2]+"_"+first_sku[-1]['cluster_id'])
+			
+			if(size in size_map):
+				existing_row=size_map.get(size)
+				existing_row.append(first_sku)
+				size_map[size]=existing_row
+			else:
+				new_list=[]
+				new_list.append(first_sku)
+				size_map[size]=new_list
+			
+			while (sec_sku_index < len(updatedValues)):#len(updatedValues)):
+				sec_sku = updatedValues[sec_sku_index]
+				first_sku_size = first_sku[-1]['size']
+				sec_sku_size = sec_sku[-1]['size']
+				if(compareSize(first_sku_size, sec_sku_size) == 0):
+					try:
+						#updatedValues.remove(first_sku)
+						existing_row=size_map.get(size)
+						existing_row.append(sec_sku)
+						size_map[size]=existing_row
+						updatedValues.remove(sec_sku)
+					except ValueError:
+						pass	
+					#cluster_map[first_sku[-1]['cluster_id']]=sec_sku
+				else:
+					if(size in size_map):
+						existing_row=size_map.get(size)
+						existing_row.append(sec_sku)
+						size_map[size]=existing_row
+					else:
+						new_list=[]
+						new_list.append(sec_sku)
+						size_map[size]=new_list
+				sec_sku_index+=1
+			try:
+				updatedValues.remove(first_sku)
+			except ValueError:
+				pass	
+			first_sku_index+=1			
+	return size_map 			
+
+
+
+
 
 
 
@@ -116,12 +220,43 @@ def getSizeOccurences(clustered_lists):
 
 if __name__== "__main__":
 	datalist=loadDataFromJson()
-	print datalist
+	#print datalist
 	distinct_attributes=createDistinctAttributes(datalist)
 	key_map = dict()
 	clustered_lists=getDistinctLists(datalist)
 	size_occurences=getSizeOccurences(clustered_lists)
-	#print size_occurences
+	clustered = clustering(clustered_lists)
+
+	#	resultMap = {}
+#	for skus in clustered:
+#		for sku in skus:
+#			print "Sku : ",sku
+#			#print sku[5]['cluster_id']
+#			print "ClusterId : ",sku[-1]['cluster_id']
+#			clusterId = sku[-1]['cluster_id']
+#			if(clusterId in resultMap):
+#				existing_row=resultMap.get(clusterId)
+#				existing_row.append(sku)
+#				resultMap[clusterId]=existing_row
+#			else:
+#				new_list=[]
+#				new_list.append(sku)
+#				resultMap[clusterId]=new_list
+#
+#
+#	for key, value in resultMap.iteritems():
+#		print len(value),"\t\t",key
+ 
+
+
+
+	print clustering(clustered_lists)
+
+	#clustered = clustering(clustered_lists)
+	#for key, value in clustered.iteritems():
+	#	print len(value),"\t\t",key
+ 
+
 	#for key, value in size_occurences.iteritems():
 		#print len(value),"\t\t",key
 
