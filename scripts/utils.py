@@ -7,7 +7,20 @@ def print_nos(text):
 	numbers = re.findall(r' \d+"', text)
 	print 'Numbers : ',numbers
 
+def getDimensionSizes(text):
+	pattern = '\d+\s\d+\/\d+\&quotH\s*(x|X)\s*\d+\s\d+\/\d+\&quotW\s*(x|X)\s*(\s|^)\d+\s\d+\/\d+\&quotD'
+	compiled = re.compile(pattern)
+	result = compiled.search(text)
+	size=""
+	if result:
+	    size = result.group(0)
+	
+	return size
+
 def getSizes(text):
+	dimension=getDimensionSizes(text)
+	if("" != dimension):
+		return dimension
 	pattern = '(\s|^)\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?(\s)*[x|X](\s)*\d+(\.\d*)?(\"|\')?(\d+)?(\"|\')?'
 	compiled = re.compile(pattern)
 	result = compiled.search(text)
@@ -54,13 +67,18 @@ def getProductType(original_title,original_size,brand):
 	return original_title
 	
 def getPackQuantity(text):
-	#print text
-	pattern = '(\d+\/Pack)'
-	compiled = re.compile(pattern)
+	slashPackPattern = '(\d+\/Pack)'
+	packOfPattern = '(Pack Of\s?\d+)'
+	compiled = re.compile(slashPackPattern)
 	result = compiled.search(text)
 	quantity=""
 	if result:
 	   quantity = result.group(0)
-	return quantity
-		
+	else:
+		compiled = re.compile(packOfPattern)
+		result = compiled.search(text)
+		quantity=""
+		if result:
+		   quantity = result.group(0)
 	
+	return quantity
