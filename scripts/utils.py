@@ -54,13 +54,18 @@ def getProductType(original_title,original_size,brand):
 	return original_title
 	
 def getPackQuantity(text):
-	#print text
-	pattern = '(\d+\/Pack)'
-	compiled = re.compile(pattern)
+	slashPackPattern = '(\d+\/Pack)'
+	packOfPattern = '(Pack Of\s?\d+)'
+	compiled = re.compile(slashPackPattern)
 	result = compiled.search(text)
 	quantity=""
 	if result:
 	   quantity = result.group(0)
-	return quantity
-		
+	else:
+		compiled = re.compile(packOfPattern)
+		result = compiled.search(text)
+		quantity=""
+		if result:
+		   quantity = result.group(0)
 	
+	return quantity
