@@ -334,7 +334,15 @@ def clustering_modified_final(clustered_lists):
 					sort = False
 					if(NM in first_sku[2].lower()):
 						sort = True
-					if(compareSize(first_sku[-1]['size'], sec_sku[-1]['size'], sort)):
+					if(first_sku[-1]['size'] is None or sec_sku[-1]['size'] is None):
+						addedskus.append(sec_sku[0])
+						try:
+							#updatedValues.remove(first_sku)
+							value.remove(sec_sku)
+						except ValueError:
+							pass
+
+					elif(compareSize(first_sku[-1]['size'], sec_sku[-1]['size'], sort)):
 						addedskus.append(sec_sku[0])
 						#price_match=checkPriceLogic(float(first_sku[3]),float(sec_sku[3]))
 						#if(price_match is True):
@@ -395,6 +403,29 @@ def checkPriceLogic(price1,price2):
 	else:
 		return False				
 
+def getClusterSkuPair(final_output):
+	cluster=1
+	sku_cluster=[]
+	for key, value in final_output.iteritems():
+		for each_sku in value:
+			sku_cluster.append("cluster"+str(cluster)+":"+each_sku)
+	return sku_cluster		
+
+def createJson(cluster_sku):
+	output = []
+	for entry in cluster_sku:
+		data = {}
+		data['SKU'] = int(entry.split(":")[1])
+		data['Cluster_ID'] = entry.split(":")[0]
+		output.append(data)
+	json_data = json.dumps(output)
+	return json_data	
+
+def writeToFile(filename,jsonoutput):
+	with open(filename, 'wb') as f:
+		f.write(jsonoutput)
+    	
+
 
 if __name__== "__main__":
 	datalist=loadDataFromJson()
@@ -403,17 +434,47 @@ if __name__== "__main__":
 	key_map = dict()
 	#this is a dictionary
 	clustered_lists=getDistinctLists(datalist)
+	#for key, value in clustered_lists.iteritems():
+	# 	print len(value),"\t\t",key
 	size_occurences=getSizeOccurences(clustered_lists)
+	# for key, value in size_occurences.iteritems():
+	# 	print len(value),"\t\t",key
 	clustered = clustering_modified_final(clustered_lists)
-
+	# for key, value in clustered.iteritems():
+	# 	print len(value),"\t\t",key
+	final_output=dict()
 	for key, value in clustered.iteritems():
+		#print "key",key
+		#print "value",value	
+		if(len(value)>13):
+			brand=key.split('_')[0]
+		else:
+			brand="unclustered"		
+		
+		if(brand in final_output):
+			existing_row=final_output.get(brand)
+			existing_row.extend(value)	
+			final_output[brand]=existing_row
+					
+			#print keyVal,' Already added first_sku is ',first_sku[0]
+		else:
+			#new_list=[]
+			#for each_sku in value:
+			#	new_list.append(each_sku)			
+			final_output[brand]=value
 
-		print len(value),"\t\t",key
-		if(('national marker_') in key):
-			print "NM : ",value
+		#print len(value),"\t\t",key
+		#if(('surya_') in key):
+		#	print "surya : ",value
 		#if(len(value) < 20):
 		#	print value
+	#print final_output
+	final_json=createJson(getClusterSkuPair(final_output))
+	writeToFile('output.json',final_json);
+
 	
+
+
 	#print clustered_lists
 	#clustered = cluster_efficient(clustered_lists)
 	#print clustered
