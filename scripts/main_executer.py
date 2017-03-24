@@ -409,6 +409,7 @@ def getClusterSkuPair(final_output):
 	for key, value in final_output.iteritems():
 		for each_sku in value:
 			sku_cluster.append("cluster"+str(cluster)+":"+each_sku)
+		cluster+=1
 	return sku_cluster		
 
 def createJson(cluster_sku):
